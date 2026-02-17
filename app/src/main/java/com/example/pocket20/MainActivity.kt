@@ -1,5 +1,6 @@
 package com.example.pocket20
 
+import kotlinx.coroutines.delay
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pocket20.ui.theme.Pocket20Theme
 
-// Удален Screen.Home
 enum class Screen {
     Shop, Profile
 }
@@ -38,15 +39,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-                var globalCount by remember { mutableStateOf(0) }
-                var shopLevel by remember { mutableStateOf(0) }
-                var coef by remember { mutableStateOf(1) }
+                var globalCount by remember { mutableStateOf(1) }
+                var shopLevel by remember { mutableStateOf(1) }
+                var speedCoef by remember { mutableStateOf(1) }
 
                 val items = listOf("Shop", "Profile")
                 val icons = listOf(Icons.Filled.ShoppingCart, Icons.Filled.Person)
+
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        val realdelay = 1000L / speedCoef
+                        delay(realdelay)
+                        globalCount += shopLevel
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -78,8 +86,6 @@ class MainActivity : ComponentActivity() {
                     ) {
                         when (currentScreen) {
                             Screen.Shop -> ShopScreen(
-                                coef = coef,
-                                onCoefChange = { coef = it },
                                 count = globalCount,
                                 onCountChange = { globalCount = it },
                                 level = shopLevel,
@@ -94,11 +100,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun ShopScreen(
-    coef: Int,
-    onCoefChange: (Int) -> Unit,
     count: Int,
     onCountChange: (Int) -> Unit,
     level: Int,
@@ -111,23 +114,22 @@ fun ShopScreen(
     ) {
         Text(text = "Level: $level", style = MaterialTheme.typography.headlineMedium, fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
         Text(text = "Score: $count", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
-        Text(text = "Cost: ${10 * coef}", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(text = "Cost: ${10 * level}", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
 
         Spacer(modifier = Modifier.height(150.dp))
 
         Button(
             onClick = {
-                val currentCost = 10 * coef
+                val currentCost = (10 * level)
                 if (count >= currentCost) {
                     onCountChange(count - currentCost)
                     onLevelChange(level + 1)
-                    onCoefChange(coef + 1)
                 }
             },
             border = BorderStroke(1.dp, Color.Black),
             modifier = Modifier.size(200.dp, 100.dp)
         ) {
-            Text(text = "Upgrade (${10 * coef})", fontSize = 20.sp)
+            Text(text = "Upgrade (${10 * level})", fontSize = 20.sp)
         }
     }
 }
