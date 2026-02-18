@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.shadow
 import com.example.pocket20.ui.theme.Pocket20Theme
 
 enum class Screen {
@@ -41,17 +43,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-                var globalCount by remember { mutableStateOf(1) }
+                var globalCount by remember { mutableStateOf(100) }
                 var shopLevel by remember { mutableStateOf(1) }
                 var speedCoef by remember { mutableStateOf(1) }
 
                 val items = listOf("Shop", "Profile")
                 val icons = listOf(Icons.Filled.ShoppingCart, Icons.Filled.Person)
 
-                LaunchedEffect(Unit) {
+                LaunchedEffect(speedCoef) {
                     while (true) {
-                        val realdelay = 1000L / speedCoef
-                        delay(realdelay)
+
+                        val safeSpeed = if (speedCoef <= 0) 1 else speedCoef
+                        val realDelay = 1000L / safeSpeed
+                        delay(realDelay)
                         globalCount += shopLevel
                     }
                 }
@@ -89,7 +93,9 @@ class MainActivity : ComponentActivity() {
                                 count = globalCount,
                                 onCountChange = { globalCount = it },
                                 level = shopLevel,
-                                onLevelChange = { shopLevel = it }
+                                onLevelChange = { shopLevel = it },
+                                speedCoef = speedCoef,
+                                onSpeedChange = { speedCoef = it }
                             )
                             Screen.Profile -> ProfileScreen()
                         }
@@ -105,18 +111,33 @@ fun ShopScreen(
     count: Int,
     onCountChange: (Int) -> Unit,
     level: Int,
-    onLevelChange: (Int) -> Unit
+    onLevelChange: (Int) -> Unit,
+    speedCoef: Int,
+    onSpeedChange: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
-        Text(text = "Level: $level", style = MaterialTheme.typography.headlineMedium, fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(modifier = Modifier.height(50.dp))
+        Text(
+            text = "Level: $level",
+            style = MaterialTheme.typography.headlineMedium,
+            fontSize = 40.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(250.dp))
+        Text(
+            text = "Speed Coef: $speedCoef",
+            style = MaterialTheme.typography.headlineMedium,
+            fontSize = 30.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(20.dp))
         Text(text = "Score: $count", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
-        Text(text = "Cost: ${10 * level}", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
 
-        Spacer(modifier = Modifier.height(150.dp))
+        Spacer(modifier = Modifier.height(60.dp))
 
         Button(
             onClick = {
@@ -126,13 +147,47 @@ fun ShopScreen(
                     onLevelChange(level + 1)
                 }
             },
-            border = BorderStroke(1.dp, Color.Black),
-            modifier = Modifier.size(200.dp, 100.dp)
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .size(200.dp, 100.dp)
         ) {
-            Text(text = "Upgrade (${10 * level})", fontSize = 20.sp)
+            Text(text = "Upgrade Lvl \n(${10 * level})", fontSize = 20.sp)
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        
+
+            
+            Button(
+                onClick = {
+                    val currentCostSpeed = 100 * speedCoef
+                    if (count >= currentCostSpeed) {
+                        onCountChange(count - currentCostSpeed)
+                        onSpeedChange(speedCoef + 1)
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .size(200.dp, 100.dp)
+            ) {
+                Text(text = "SpeedUp \n(${100 * speedCoef})", fontSize = 20.sp)
+            }
     }
 }
+
+
+            
+        
+    
 
 @Composable
 fun ProfileScreen() {
