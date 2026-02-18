@@ -2,35 +2,29 @@ package com.example.pocket20
 
 import kotlinx.coroutines.delay
 import android.os.Bundle
+import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.shadow
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.example.pocket20.ui.theme.Pocket20Theme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 
 enum class Screen {
     Shop, Profile
@@ -43,20 +37,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-                var globalCount by remember { mutableStateOf(100) }
+                var globalCount by remember { mutableStateOf(999990L) }
                 var shopLevel by remember { mutableStateOf(1) }
                 var speedCoef by remember { mutableStateOf(1) }
+                var isWon by remember { mutableStateOf(false) }
 
                 val items = listOf("Shop", "Profile")
                 val icons = listOf(Icons.Filled.ShoppingCart, Icons.Filled.Person)
+                val winScore = 1_000_000L
 
-                LaunchedEffect(speedCoef) {
-                    while (true) {
-
+                LaunchedEffect(speedCoef, isWon) {
+                    while (!isWon) {
                         val safeSpeed = if (speedCoef <= 0) 1 else speedCoef
                         val realDelay = 1000L / safeSpeed
                         delay(realDelay)
                         globalCount += shopLevel
+
+                        if (globalCount >= winScore) {
+                            isWon = true
+                        }
                     }
                 }
 
@@ -64,20 +63,22 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
-                        NavigationBar {
-                            items.forEachIndexed { index, item ->
-                                NavigationBarItem(
-                                    icon = { Icon(icons[index], contentDescription = item) },
-                                    label = { Text(item) },
-                                    selected = currentScreen.ordinal == index,
-                                    onClick = {
-                                        currentScreen = when (index) {
-                                            0 -> Screen.Shop
-                                            1 -> Screen.Profile
-                                            else -> Screen.Shop
+                        if (!isWon) {
+                            NavigationBar {
+                                items.forEachIndexed { index, item ->
+                                    NavigationBarItem(
+                                        icon = { Icon(icons[index], contentDescription = item) },
+                                        label = { Text(item) },
+                                        selected = currentScreen.ordinal == index,
+                                        onClick = {
+                                            currentScreen = when (index) {
+                                                0 -> Screen.Shop
+                                                1 -> Screen.Profile
+                                                else -> Screen.Shop
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
@@ -88,16 +89,31 @@ class MainActivity : ComponentActivity() {
                             .padding(innerPadding),
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        when (currentScreen) {
-                            Screen.Shop -> ShopScreen(
-                                count = globalCount,
-                                onCountChange = { globalCount = it },
-                                level = shopLevel,
-                                onLevelChange = { shopLevel = it },
-                                speedCoef = speedCoef,
-                                onSpeedChange = { speedCoef = it }
-                            )
-                            Screen.Profile -> ProfileScreen()
+                        if (isWon) {
+                            WinScreen(onRestart = {
+                                globalCount = 0L
+                                shopLevel = 1
+                                speedCoef = 1
+                                isWon = false
+                                currentScreen = Screen.Shop
+                            })
+                        } else {
+                            when (currentScreen) {
+                                Screen.Shop -> ShopScreen(
+                                    count = globalCount,
+                                    onCountChange = { globalCount = it },
+                                    level = shopLevel,
+                                    onLevelChange = { shopLevel = it },
+                                    speedCoef = speedCoef,
+                                    onSpeedChange = { speedCoef = it }
+                                )
+                                // ИСПРАВЛЕНО: Передаем параметры в ProfileScreen
+                                Screen.Profile -> ProfileScreen(
+                                    currentCount = globalCount,
+                                    onCountChange = { globalCount = it },
+                                    onWinChange = { isWon = it }
+                                )
+                            }
                         }
                     }
                 }
@@ -108,8 +124,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShopScreen(
-    count: Int,
-    onCountChange: (Int) -> Unit,
+    count: Long,
+    onCountChange: (Long) -> Unit,
     level: Int,
     onLevelChange: (Int) -> Unit,
     speedCoef: Int,
@@ -121,81 +137,178 @@ fun ShopScreen(
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(modifier = Modifier.height(50.dp))
-        Text(
-            text = "Level: $level",
-            style = MaterialTheme.typography.headlineMedium,
-            fontSize = 40.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(250.dp))
-        Text(
-            text = "Speed Coef: $speedCoef",
-            style = MaterialTheme.typography.headlineMedium,
-            fontSize = 30.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Text(text = "Level: $level", fontSize = 40.sp)
+        Spacer(modifier = Modifier.height(150.dp))
+        Text(text = "Speed Coef: $speedCoef", fontSize = 30.sp)
         Spacer(modifier = Modifier.height(20.dp))
-        Text(text = "Score: $count", fontSize = 30.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(text = "Score: $count", fontSize = 30.sp)
 
-        Spacer(modifier = Modifier.height(60.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         Button(
             onClick = {
-                val currentCost = (10 * level)
+                val currentCost = (10 * level).toLong()
                 if (count >= currentCost) {
                     onCountChange(count - currentCost)
                     onLevelChange(level + 1)
                 }
             },
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(8.dp), // Указываем форму
             modifier = Modifier
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .size(200.dp, 100.dp)
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp)) // Возвращаем тень
+                .size(200.dp, 80.dp)
         ) {
-            Text(text = "Upgrade Lvl \n(${10 * level})", fontSize = 20.sp)
+            Text(text = "Upgrade Lvl\n(${10 * level})", textAlign = TextAlign.Center)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        
+        Button(
+            onClick = {
+                val currentCostSpeed = (100 * speedCoef).toLong()
+                if (count >= currentCostSpeed) {
+                    onCountChange(count - currentCostSpeed)
+                    onSpeedChange(speedCoef + 1)
+                }
+            },
+            shape = RoundedCornerShape(8.dp), // Указываем форму
+            modifier = Modifier
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp)) // Возвращаем тень
+                .size(200.dp, 80.dp)
+        ) {
+            Text(text = "SpeedUp\n(${100 * speedCoef})", textAlign = TextAlign.Center)
+        }
+    }
+}
+@Composable
+fun ProfileScreen(
+    currentCount: Long,
+    onCountChange: (Long) -> Unit,
+    onWinChange: (Boolean) -> Unit
+) {
+    var clickCount by remember { mutableStateOf(0) }
+    var consoleVisible by remember { mutableStateOf(false) }
+    var consoleHistory by remember { mutableStateOf("Console initialized...") }
+    var commandText by remember { mutableStateOf("") }
 
-            
-            Button(
-                onClick = {
-                    val currentCostSpeed = 100 * speedCoef
-                    if (count >= currentCostSpeed) {
-                        onCountChange(count - currentCostSpeed)
-                        onSpeedChange(speedCoef + 1)
+    Column(
+        modifier = Modifier.padding(16.dp).fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(50.dp))
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .wrapContentSize()
+                .clickable {
+                    clickCount++
+                    if (clickCount > 4) {
+                        consoleVisible = true
                     }
-                },
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .size(200.dp, 100.dp)
+                }
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "SpeedUp \n(${100 * speedCoef})", fontSize = 20.sp)
+                Text(text = "The End?", fontSize = 30.sp)
+                Text(text = "Get 1,000,000 scores.", fontSize = 20.sp)
             }
+        }
+
+
+        if (consoleVisible) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.Black),
+                modifier = Modifier.fillMaxWidth().height(300.dp),
+                border = BorderStroke(1.dp, Color.Green)
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+
+                    Text(
+                        text = consoleHistory,
+                        color = Color.Green,
+                        fontSize = 12.sp,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+
+
+                    TextField(
+                        value = commandText,
+                        onValueChange = { commandText = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedTextColor = Color.Green,
+                            unfocusedTextColor = Color.Green,
+                            cursorColor = Color.Green
+                        ),
+                        placeholder = { Text("> type command...", color = Color.DarkGray) },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                val cmd = commandText.lowercase().trim()
+                                when {
+                                    cmd == "win" -> onWinChange(true)
+                                    cmd.startsWith("add ") -> {
+                                        val amount = cmd.substringAfter("add ").toLongOrNull() ?: 0L
+                                        onCountChange(currentCount + amount)
+                                        consoleHistory += "\n> Added $amount scores"
+                                    }
+                                    cmd == "cls" -> consoleHistory = "Console cleared."
+                                    else -> consoleHistory += "\n> Unknown command: $cmd"
+                                }
+                                commandText = ""
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Send", tint = Color.Green)
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
-
-            
-        
-    
-
 @Composable
-fun ProfileScreen() {
+fun WinScreen(onRestart: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
-        Text(text = "Profile", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(modifier = Modifier.height(100.dp))
+        Text(text = "🎉", fontSize = 100.sp)
+        Text(text = "YOU WIN!", fontSize = 40.sp, color = Color.Green)
+        Spacer(modifier = Modifier.height(150.dp))
+
+        Button(
+            onClick = onRestart,
+            // 1. Добавляем системное возвышение (elevation)
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 4.dp
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                // 2. Добавляем явную тень через Modifier для усиления эффекта
+                .shadow(
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    clip = false
+                )
+        ) {
+            Text(
+                text = "Restart Game",
+                fontSize = 30.sp,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
     }
 }
