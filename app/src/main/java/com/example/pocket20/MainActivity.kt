@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.example.pocket20.ui.theme.Pocket20Theme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 
 enum class Screen {
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-                var globalCount by remember { mutableStateOf(999990L) }
+                var globalCount by remember { mutableStateOf(1L) }
                 var shopLevel by remember { mutableStateOf(1) }
                 var speedCoef by remember { mutableStateOf(1) }
                 var isWon by remember { mutableStateOf(false) }
@@ -90,7 +92,10 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         if (isWon) {
-                            WinScreen(onRestart = {
+                            val rebith = true
+                            WinScreen(
+                                globalCount = globalCount,
+                                onRestart = {
                                 globalCount = 0L
                                 shopLevel = 1
                                 speedCoef = 1
@@ -107,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                     speedCoef = speedCoef,
                                     onSpeedChange = { speedCoef = it }
                                 )
-                                // ИСПРАВЛЕНО: Передаем параметры в ProfileScreen
+
                                 Screen.Profile -> ProfileScreen(
                                     currentCount = globalCount,
                                     onCountChange = { globalCount = it },
@@ -180,6 +185,7 @@ fun ShopScreen(
         }
     }
 }
+
 @Composable
 fun ProfileScreen(
     currentCount: Long,
@@ -190,9 +196,12 @@ fun ProfileScreen(
     var consoleVisible by remember { mutableStateOf(false) }
     var consoleHistory by remember { mutableStateOf("Console initialized...") }
     var commandText by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier.padding(16.dp).fillMaxSize(),
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(50.dp))
@@ -224,18 +233,30 @@ fun ProfileScreen(
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.Black),
-                modifier = Modifier.fillMaxWidth().height(300.dp),
+                modifier = Modifier
+                    .height(300.dp)
+                    .fillMaxWidth()
+                    .height(300.dp),
                 border = BorderStroke(1.dp, Color.Green)
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
-
-                    Text(
-                        text = consoleHistory,
-                        color = Color.Green,
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    LaunchedEffect(consoleHistory){
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
                     )
+                    {
+                        Text(
+                            text = consoleHistory,
+                            color = Color.Green,
+                            fontSize = 12.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
 
 
                     TextField(
@@ -277,7 +298,12 @@ fun ProfileScreen(
 }
 
 @Composable
-fun WinScreen(onRestart: () -> Unit) {
+fun WinScreen(
+    onRestart: () -> Unit,
+    globalCount: Long,
+
+
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -288,21 +314,24 @@ fun WinScreen(onRestart: () -> Unit) {
         Text(text = "YOU WIN!", fontSize = 40.sp, color = Color.Green)
         Spacer(modifier = Modifier.height(150.dp))
 
+
         Button(
             onClick = onRestart,
-            // 1. Добавляем системное возвышение (elevation)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
+
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 10.dp,
                 pressedElevation = 4.dp
+
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
-                // 2. Добавляем явную тень через Modifier для усиления эффекта
                 .shadow(
                     elevation = 12.dp,
                     shape = RoundedCornerShape(12.dp),
                     clip = false
                 )
+
         ) {
             Text(
                 text = "Restart Game",
