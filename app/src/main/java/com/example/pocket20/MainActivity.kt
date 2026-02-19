@@ -61,7 +61,6 @@ class MainActivity : ComponentActivity() {
 
                 var rebirth by remember { mutableStateOf(1) }
 
-
                 val items = listOf("Shop", "Profile")
 
                 val icons = listOf(Icons.Filled.Home, Icons.Filled.Person)
@@ -70,22 +69,13 @@ class MainActivity : ComponentActivity() {
 
 
                 LaunchedEffect(speedCoef, isWon) {
-
                     while (!isWon) {
-
                         val safeSpeed = if (speedCoef <= 0) 1 else speedCoef
-
                         val realDelay = 1000L / safeSpeed
-
                         delay(realDelay)
-
-                        globalCount += shopLevel
-
-
+                        globalCount += shopLevel * rebirth
                         if (globalCount >= winScore) {
-
                             isWon = true
-
                         }
 
                     }
@@ -102,239 +92,123 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
 
                         if (!isWon) {
-
                             NavigationBar {
-
                                 items.forEachIndexed { index, item ->
-
                                     NavigationBarItem(
-
                                         icon = { Icon(icons[index], contentDescription = item) },
-
                                         label = { Text(item) },
-
                                         selected = currentScreen.ordinal == index,
-
                                         onClick = {
-
                                             currentScreen = when (index) {
-
                                                 0 -> Screen.Shop
-
                                                 1 -> Screen.Profile
-
                                                 else -> Screen.Shop
-
                                             }
-
                                         }
-
                                     )
-
                                 }
-
                             }
-
                         }
-
                     }
 
                 ) { innerPadding ->
-
                     Surface(
-
                         modifier = Modifier
-
                             .fillMaxSize()
-
                             .padding(innerPadding),
-
                         color = MaterialTheme.colorScheme.surface
-
                     ) {
-
                         if (isWon) {
-
                             WinScreen(
-
                                 globalCount = globalCount,
-
                                 onRestart = {
-
                                     globalCount = 0L
-
                                     shopLevel = 1
-
                                     speedCoef = 1
-
                                     rebirth++
-
                                     isWon = false
-
                                     currentScreen = Screen.Shop
-
                                 })
-
                         } else {
-
                             when (currentScreen) {
-
                                 Screen.Shop -> ShopScreen(
-
                                     count = globalCount,
-
                                     onCountChange = { globalCount = it },
-
                                     level = shopLevel,
-
                                     onLevelChange = { shopLevel = it },
-
                                     speedCoef = speedCoef,
-
                                     onSpeedChange = { speedCoef = it }
-
                                 )
-
-
                                 Screen.Profile -> ProfileScreen(
-
                                     currentCount = globalCount,
-
                                     onCountChange = { globalCount = it },
-
                                     onWinChange = { isWon = it },
-
                                     rebirth = rebirth
-
                                 )
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
 @Composable
 
 fun ShopScreen(
-
     count: Long,
-
     onCountChange: (Long) -> Unit,
-
     level: Int,
-
     onLevelChange: (Int) -> Unit,
-
     speedCoef: Int,
-
     onSpeedChange: (Int) -> Unit
-
 ) {
-
     Column(
-
         modifier = Modifier.fillMaxSize(),
-
         horizontalAlignment = Alignment.CenterHorizontally,
-
         verticalArrangement = Arrangement.Top
-
     ) {
-
         Spacer(modifier = Modifier.height(50.dp))
-
         Text(text = "Level: $level", fontSize = 40.sp)
-
         Spacer(modifier = Modifier.height(150.dp))
-
         Text(text = "Speed Coef: $speedCoef", fontSize = 30.sp)
-
         Spacer(modifier = Modifier.height(20.dp))
-
         Text(text = "Score: $count", fontSize = 30.sp)
-
-
         Spacer(modifier = Modifier.height(40.dp))
-
-
         Button(
-
             onClick = {
-
                 val currentCost = (10 * level).toLong()
-
                 if (count >= currentCost) {
-
                     onCountChange(count - currentCost)
-
                     onLevelChange(level + 1)
-
                 }
-
             },
-
             shape = RoundedCornerShape(8.dp), // Указываем форму
-
             modifier = Modifier
-
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp)) // Возвращаем тень
-
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
                 .size(200.dp, 80.dp)
-
         ) {
-
             Text(text = "Upgrade Lvl\n(${10 * level})", textAlign = TextAlign.Center)
-
         }
-
-
         Spacer(modifier = Modifier.height(20.dp))
-
-
         Button(
-
             onClick = {
-
                 val currentCostSpeed = (100 * speedCoef).toLong()
-
                 if (count >= currentCostSpeed) {
-
                     onCountChange(count - currentCostSpeed)
-
                     onSpeedChange(speedCoef + 1)
-
                 }
-
             },
-
-            shape = RoundedCornerShape(8.dp), // Указываем форму
-
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
-
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp)) // Возвращаем тень
-
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
                 .size(200.dp, 80.dp)
-
         ) {
-
             Text(text = "SpeedUp\n(${100 * speedCoef})", textAlign = TextAlign.Center)
-
         }
-
     }
-
 }
 
 
@@ -379,7 +253,25 @@ fun ProfileScreen(
                 Text(text = "Get 1,000,000 score.", fontSize = 16.sp)
                 }
             }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            shadowElevation = 8.dp,
+            color = if (rebirth > 2) Color.Green else Color.LightGray,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text =  "Here we go again...")
+                Text(text = "Get 1,000,000 score over.", fontSize = 16.sp)
+            }
         }
+    }
 
 
         if (consoleVisible) {
@@ -392,15 +284,13 @@ fun ProfileScreen(
                     .height(300.dp),
                 border = BorderStroke(1.dp, Color.Green)
             ) {
-                // 1. Используем Column как основной контейнер внутри Card
+
                 Column(modifier = Modifier.fillMaxSize()) {
 
-                    // 2. Обертка для логов и кнопки закрытия
                     Box(modifier = Modifier
-                        .weight(1f) // Занимает всё доступное пространство, толкая TextField вниз
+                        .weight(1f)
                         .fillMaxWidth()
                     ) {
-                        // Прокручиваемый список истории
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -429,9 +319,7 @@ fun ProfileScreen(
                         }
                     }
 
-                    // 3. Линия-разделитель (опционально, для красоты)
                     HorizontalDivider(color = Color.Green.copy(alpha = 0.3f), thickness = 1.dp)
-
 
                     TextField(
                         value = commandText,
