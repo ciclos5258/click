@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.example.pocket20.ui.theme.Pocket20Theme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 
 enum class Screen {
 
@@ -48,49 +48,35 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             Pocket20Theme {
-
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-
                 var globalCount by remember { mutableStateOf(1L) }
-
                 var shopLevel by remember { mutableStateOf(1) }
-
                 var speedCoef by remember { mutableStateOf(1) }
-
                 var isWon by remember { mutableStateOf(false) }
-
                 var rebirth by remember { mutableStateOf(1) }
-
+                var rebirthCoef by remember { mutableStateOf(1) }
                 val items = listOf("Shop", "Profile")
-
                 val icons = listOf(Icons.Filled.Home, Icons.Filled.Person)
-
                 val winScore = 1_000_000L
-
 
                 LaunchedEffect(speedCoef, isWon) {
                     while (!isWon) {
                         val safeSpeed = if (speedCoef <= 0) 1 else speedCoef
                         val realDelay = 1000L / safeSpeed
                         delay(realDelay)
-                        globalCount += shopLevel * rebirth
-                        if (globalCount >= winScore) {
+                        globalCount += shopLevel * rebirthCoef * rebirth
+                        if (globalCount >= winScore && rebirth < 3) {
                             isWon = true
                         }
 
                     }
-
                 }
 
 
                 Scaffold(
-
                     modifier = Modifier.fillMaxSize(),
-
                     containerColor = MaterialTheme.colorScheme.background,
-
                     bottomBar = {
-
                         if (!isWon) {
                             NavigationBar {
                                 items.forEachIndexed { index, item ->
@@ -121,6 +107,7 @@ class MainActivity : ComponentActivity() {
                         if (isWon) {
                             WinScreen(
                                 globalCount = globalCount,
+                                rebirth = rebirth,
                                 onRestart = {
                                     globalCount = 0L
                                     shopLevel = 1
@@ -128,6 +115,7 @@ class MainActivity : ComponentActivity() {
                                     rebirth++
                                     isWon = false
                                     currentScreen = Screen.Shop
+                                    rebirthCoef = rebirthCoef + 5
                                 })
                         } else {
                             when (currentScreen) {
@@ -143,7 +131,9 @@ class MainActivity : ComponentActivity() {
                                     currentCount = globalCount,
                                     onCountChange = { globalCount = it },
                                     onWinChange = { isWon = it },
-                                    rebirth = rebirth
+                                    rebirth = rebirth,
+                                    shopLevel = shopLevel,
+                                    speedCoef = speedCoef
                                 )
                             }
                         }
@@ -217,12 +207,15 @@ fun ProfileScreen(
     currentCount: Long,
     onCountChange: (Long) -> Unit,
     onWinChange: (Boolean) -> Unit,
-    rebirth: Int
+    rebirth: Int,
+    shopLevel: Int,
+    speedCoef: Int
 ) {
     var clickCount by remember { mutableStateOf(0) }
     var consoleVisible by remember { mutableStateOf(false) }
     var consoleHistory by remember { mutableStateOf("Console initialized...") }
     var commandText by remember { mutableStateOf("") }
+
     val scrollState = rememberScrollState()
 
     Column(
@@ -249,8 +242,8 @@ fun ProfileScreen(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text =  "The End?")
-                Text(text = "Get 1,000,000 score.", fontSize = 16.sp)
+                Text(text =  "The End?", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Get 1,000,000 score.", fontSize = 20.sp)
                 }
             }
 
@@ -267,11 +260,47 @@ fun ProfileScreen(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text =  "Here we go again...")
-                Text(text = "Get 1,000,000 score over.", fontSize = 16.sp)
+                Text(text =  "Here we go again...", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Get 1,000,000 score over.", fontSize = 20.sp)
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            shadowElevation = 8.dp,
+            color = if (shopLevel > 99) Color.Green else Color.LightGray,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text =  "Professional time waster", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Reach 100 level.", fontSize = 20.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            shadowElevation = 8.dp,
+            color = if (speedCoef > 99) Color.Green else Color.LightGray,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text =  "Wait! That's Illegal!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Reach 100 speed coef.", fontSize = 20.sp)
+            }
+        }
+
     }
+
 
 
         if (consoleVisible) {
@@ -305,7 +334,7 @@ fun ProfileScreen(
                             )
                         }
 
-                        // Кнопка закрытия (в верхнем правом углу списка)
+
                         IconButton(
                             onClick = { consoleVisible = false },
                             modifier = Modifier.align(Alignment.TopEnd)
@@ -367,6 +396,7 @@ fun ProfileScreen(
 fun WinScreen(
     onRestart: () -> Unit,
     globalCount: Long,
+    rebirth: Int
     ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -374,11 +404,21 @@ fun WinScreen(
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(modifier = Modifier.height(100.dp))
-        Text(text = "🎉", fontSize = 100.sp)
-        Text(text = "YOU WIN!", fontSize = 40.sp, color = Color.Green)
-        Spacer(modifier = Modifier.height(50.dp))
-        Text(text = "Welcome to The Game.", fontSize = 30.sp)
-        Spacer(modifier = Modifier.height(100.dp))
+        Text(text = "🎉", fontSize = 60.sp)
+        Text(text = "YOU WIN!", fontSize = 30.sp, color = Color.Green)
+        Spacer(modifier = Modifier.height(30.dp))
+        when  {
+            rebirth == 1 -> {
+                Text(text = "Or not?", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(text = "Welcome to The Game.", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            rebirth == 2 -> {
+                Text(text = "Here we go again?", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+        }
 
         Button(
             onClick = onRestart,
