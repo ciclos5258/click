@@ -55,6 +55,10 @@ class MainActivity : ComponentActivity() {
                 var isWon by remember { mutableStateOf(false) }
                 var rebirth by remember { mutableStateOf(1) }
                 var rebirthCoef by remember { mutableStateOf(1) }
+                var completeProfessionaltimewaster by remember { mutableStateOf(false) }
+                var completeWait by remember { mutableStateOf(false) }
+                var completeCEO by remember { mutableStateOf(false) }
+
                 val items = listOf("Shop", "Profile")
                 val icons = listOf(Icons.Filled.Home, Icons.Filled.Person)
                 val winScore = 1_000_000L
@@ -65,6 +69,9 @@ class MainActivity : ComponentActivity() {
                         val realDelay = 1000L / safeSpeed
                         delay(realDelay)
                         globalCount += shopLevel * rebirthCoef * rebirth
+                        if (shopLevel > 99){completeProfessionaltimewaster = true}
+                        if (speedCoef > 99){completeWait = true}
+                        if (shopLevel > 999){completeCEO = true}
                         if (globalCount >= winScore) {
                             isWon = true
                         }
@@ -142,7 +149,10 @@ class MainActivity : ComponentActivity() {
                                     onWinChange = { isWon = it },
                                     rebirth = rebirth,
                                     shopLevel = shopLevel,
-                                    speedCoef = speedCoef
+                                    speedCoef = speedCoef,
+                                    completeProfessionaltimewaster = completeProfessionaltimewaster,
+                                    completeWait = completeWait,
+                                    completeCEO = completeCEO
                                 )
                             }
                         }
@@ -280,7 +290,10 @@ fun ProfileScreen(
     onWinChange: (Boolean) -> Unit,
     rebirth: Int,
     shopLevel: Int,
-    speedCoef: Int
+    speedCoef: Int,
+    completeProfessionaltimewaster: Boolean,
+    completeWait: Boolean,
+    completeCEO: Boolean
 ) {
     var clickCount by remember { mutableStateOf(0) }
     var consoleVisible by remember { mutableStateOf(false) }
@@ -338,7 +351,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (shopLevel > 99) Color.Green else Color.LightGray,
+            color = if (completeProfessionaltimewaster == true) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -355,7 +368,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (speedCoef > 99) Color.Green else Color.LightGray,
+            color = if (completeWait == true) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -372,7 +385,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (shopLevel > 999) Color.Green else Color.LightGray,
+            color = if (completeCEO == true) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
