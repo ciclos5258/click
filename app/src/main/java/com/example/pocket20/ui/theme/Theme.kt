@@ -11,26 +11,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-val AppGray = Color(0xFF808080)
+val AppGray = Color(0xFF606060)
 val PureWhite = Color(0xFFFFFFFF)
 val PureBlack = Color(0xFF000000)
 
+
 private val DarkColorScheme = darkColorScheme(
-    primary = AppGray,      // Основной цвет (кнопки, активные элементы)
-    background = AppGray,   // Фон всего экрана
-    surface = AppGray,      // Фон карточек и диалогов
-    onPrimary = PureBlack,  // Цвет текста/иконок поверх primary
-    onBackground = PureBlack, // Цвет текста/иконок поверх background
-    onSurface = PureBlack   // Цвет текста/иконок поверх surface
+    primary = PureWhite,
+    background = PureWhite,
+    surface = PureWhite,
+
+    surfaceContainer = PureWhite,
+    secondaryContainer = PureWhite,
+    onSecondaryContainer = PureBlack,
+
+    onPrimary = PureBlack,
+    onBackground = PureBlack,
+    onSurface = PureBlack
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PureWhite,      // Основной цвет (кнопки, активные элементы)
-    background = PureWhite,   // Фон всего экрана
-    surface = PureWhite,      // Фон карточек и диалогов
-    onPrimary = PureBlack,    // Цвет текста/иконок поверх primary
-    onBackground = PureBlack, // Цвет текста/иконок поверх background
-    onSurface = PureBlack     // Цвет текста/иконок поверх surface
+    primary = PureWhite,
+    background = PureWhite,
+    surface = PureWhite,
+
+    surfaceContainer = PureWhite,
+    secondaryContainer = PureWhite,
+    onSecondaryContainer = PureBlack,
+
+    onPrimary = PureBlack,
+    onBackground = PureBlack,
+    onSurface = PureBlack
 )
 
 @Composable

@@ -6,10 +6,12 @@ import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Close
@@ -18,10 +20,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.example.pocket20.ui.theme.Pocket20Theme
@@ -29,24 +33,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 enum class Screen {
-
     Shop, Profile
-
 }
-
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
-
         setContent {
-
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
                 var globalCount by remember { mutableStateOf(1L) }
@@ -65,38 +64,47 @@ class MainActivity : ComponentActivity() {
                         val realDelay = 1000L / safeSpeed
                         delay(realDelay)
                         globalCount += shopLevel * rebirthCoef * rebirth
-                        if (globalCount >= winScore && rebirth < 3) {
+                        if (globalCount >= winScore) {
                             isWon = true
                         }
-
                     }
                 }
-
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
                         if (!isWon) {
-                            NavigationBar {
-                                items.forEachIndexed { index, item ->
-                                    NavigationBarItem(
-                                        icon = { Icon(icons[index], contentDescription = item) },
-                                        label = { Text(item) },
-                                        selected = currentScreen.ordinal == index,
-                                        onClick = {
-                                            currentScreen = when (index) {
-                                                0 -> Screen.Shop
-                                                1 -> Screen.Profile
-                                                else -> Screen.Shop
+                            Column(){
+                                HorizontalDivider(color = Color.Black, thickness = 2.dp)
+                                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+                                    items.forEachIndexed { index, item ->
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    icons[index],
+                                                    contentDescription = item
+                                                )
+                                            },
+                                            label = { Text(item) },
+                                            selected = currentScreen.ordinal == index,
+                                            onClick = {
+                                                currentScreen = when (index) {
+                                                    0 -> Screen.Shop
+                                                    1 -> Screen.Profile
+                                                    else -> Screen.Shop
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+
+
+
+
+                                    }
                                 }
                             }
                         }
                     }
-
                 ) { innerPadding ->
                     Surface(
                         modifier = Modifier
@@ -144,9 +152,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun TextInsideProgressBar(progress: Float, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(30.dp)
+            .clip(RoundedCornerShape(15.dp)) // Скругляем углы
+            .background(Color.LightGray),
+        contentAlignment = Alignment.Center
+    ) {
+        // Рисуем сам прогресс
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Cyan,
+            trackColor = Color.Transparent // Фон уже задан у Box
+        )
+
+        // Текст поверх прогресса
+        Text(
+            text = "Выполнено: ${(progress * 100).toInt()}%",
+            color = Color.Black,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
 
 @Composable
-
 fun ShopScreen(
     count: Long,
     onCountChange: (Long) -> Unit,
@@ -159,13 +192,34 @@ fun ShopScreen(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
+    )
+    {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.images),
+                contentDescription = "Logo",
+                modifier = Modifier.size(50.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            TextInsideProgressBar(progress = (count.toFloat() / 1000000f).coerceIn(0f, 1f), modifier = Modifier.weight(3f))
+        }
+    }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
     ) {
-        Spacer(modifier = Modifier.height(50.dp))
+        Spacer(modifier = Modifier.height(200.dp))
         Text(text = "Level: $level", fontSize = 40.sp)
-        Spacer(modifier = Modifier.height(150.dp))
-        Text(text = "Speed Coef: $speedCoef", fontSize = 30.sp)
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(text = "Score: $count", fontSize = 30.sp)
+        Spacer(modifier = Modifier.height(30.dp))
+        Text(text = "Speed Coef: $speedCoef", fontSize = 40.sp)
+        Spacer(modifier = Modifier.height(30.dp))
+        Text(text = "Score: $count", fontSize = 40.sp)
         Spacer(modifier = Modifier.height(40.dp))
         Button(
             onClick = {
@@ -175,9 +229,12 @@ fun ShopScreen(
                     onLevelChange(level + 1)
                 }
             },
-            shape = RoundedCornerShape(8.dp), // Указываем форму
+            shape = RoundedCornerShape(8.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 8.dp,
+                pressedElevation = 2.dp
+            ),
             modifier = Modifier
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
                 .size(200.dp, 80.dp)
         ) {
             Text(text = "Upgrade Lvl\n(${10 * level})", textAlign = TextAlign.Center)
@@ -192,15 +249,17 @@ fun ShopScreen(
                 }
             },
             shape = RoundedCornerShape(8.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 8.dp,
+                pressedElevation = 2.dp
+            ),
             modifier = Modifier
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
                 .size(200.dp, 80.dp)
         ) {
             Text(text = "SpeedUp\n(${100 * speedCoef})", textAlign = TextAlign.Center)
         }
     }
 }
-
 
 @Composable
 fun ProfileScreen(
@@ -215,7 +274,6 @@ fun ProfileScreen(
     var consoleVisible by remember { mutableStateOf(false) }
     var consoleHistory by remember { mutableStateOf("Console initialized...") }
     var commandText by remember { mutableStateOf("") }
-
     val scrollState = rememberScrollState()
 
     Column(
@@ -224,7 +282,6 @@ fun ProfileScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
-
     ) {
         Spacer(modifier = Modifier.height(50.dp))
         Surface(
@@ -244,8 +301,8 @@ fun ProfileScreen(
             ) {
                 Text(text =  "The End?", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(text = "Get 1,000,000 score.", fontSize = 20.sp)
-                }
             }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -298,124 +355,184 @@ fun ProfileScreen(
                 Text(text = "Reach 100 speed coef.", fontSize = 20.sp)
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    }
-
-
-
-        if (consoleVisible) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Developer console", color = Color.Gray, fontSize = 12.sp)
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.Black),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                border = BorderStroke(1.dp, Color.Green)
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            shadowElevation = 8.dp,
+            color = if (shopLevel > 999) Color.Green else Color.LightGray,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                Column(modifier = Modifier.fillMaxSize()) {
-
-                    Box(modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(scrollState)
-                                .padding(8.dp)
-                        ) {
-                            Text(
-                                text = consoleHistory,
-                                color = Color.Green,
-                                fontSize = 12.sp,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            )
-                        }
-
-
-                        IconButton(
-                            onClick = { consoleVisible = false },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = Color.Green,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = Color.Green.copy(alpha = 0.3f), thickness = 1.dp)
-
-                    TextField(
-                        value = commandText,
-                        onValueChange = { commandText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = Color.Green,
-                            unfocusedTextColor = Color.Green,
-                            cursorColor = Color.Green,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        placeholder = { Text(" type the command > ", color = Color.DarkGray) },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                val cmd = commandText.lowercase().trim()
-                                when {
-                                    cmd == "win" -> onWinChange(true)
-                                    cmd.startsWith("add ") -> {
-                                        val amount = cmd.substringAfter("add ").toLongOrNull() ?: 0L
-                                        onCountChange(currentCount + amount)
-                                        consoleHistory += "\n> Added: $amount"
-                                    }
-                                    cmd == "cls" -> consoleHistory = "Console was cleared."
-                                    cmd == "close" -> consoleVisible = false
-                                    else -> consoleHistory += "\n> Error: $cmd"
-                                }
-                                commandText = ""
-                            }) {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Green)
-                            }
-                        }
-                    )
-                }
+                Text(text =  "CEO of AFK", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Reach 1000 level.", fontSize = 20.sp)
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            shadowElevation = 8.dp,
+            color = if (rebirth > 9) Color.Green else Color.LightGray,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text =  "10/10", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Gues :)", fontSize = 20.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    if (consoleVisible) {
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Developer console", color = Color.Gray, fontSize = 12.sp)
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.Black),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            border = BorderStroke(1.dp, Color.Green)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = consoleHistory,
+                            color = Color.Green,
+                            fontSize = 12.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { consoleVisible = false },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.Green,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = Color.Green.copy(alpha = 0.3f), thickness = 1.dp)
+
+                TextField(
+                    value = commandText,
+                    onValueChange = { commandText = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedTextColor = Color.Green,
+                        unfocusedTextColor = Color.Green,
+                        cursorColor = Color.Green,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    placeholder = { Text(" type the command > ", color = Color.DarkGray) },
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val cmd = commandText.lowercase().trim()
+                            when {
+                                cmd == "win" -> onWinChange(true)
+                                cmd.startsWith("add ") -> {
+                                    val amount = cmd.substringAfter("add ").toLongOrNull() ?: 0L
+                                    onCountChange(currentCount + amount)
+                                    consoleHistory += "\n> Added: $amount"
+                                }
+                                cmd == "cls" -> consoleHistory = "Console was cleared."
+                                cmd == "close" -> consoleVisible = false
+                                else -> consoleHistory += "\n> Error: $cmd"
+                            }
+                            commandText = ""
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Green)
+                        }
+                    }
+                )
+            }
+        }
+    }
 }
 
-
 @Composable
-
 fun WinScreen(
     onRestart: () -> Unit,
     globalCount: Long,
     rebirth: Int
-    ) {
+) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .padding(5.dp)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(modifier = Modifier.height(100.dp))
-        Text(text = "🎉", fontSize = 60.sp)
-        Text(text = "YOU WIN!", fontSize = 30.sp, color = Color.Green)
+        Text(text = "🎉YOU WIN!🎉", fontSize = 30.sp, color = Color.Green)
         Spacer(modifier = Modifier.height(30.dp))
-        when  {
-            rebirth == 1 -> {
+        when (rebirth) {
+            1 -> {
                 Text(text = "Or not?", fontSize = 30.sp)
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(text = "Welcome to The Game.", fontSize = 30.sp)
                 Spacer(modifier = Modifier.height(100.dp))
             }
-            rebirth == 2 -> {
+            2 -> {
                 Text(text = "Here we go again?", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            3 -> {
+                Text(text = "Successfully Unproductive", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            4 -> {
+                Text(text = "You’re Doing Great, Sweetie", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            5 -> {
+                Text(text = "You are natural at This (Unfortunately)", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            6 -> {
+                Text(text = "You a professional life waster!", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            7 -> {
+                Text(text = "Stop it! You are doing this in vain", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            8 -> {
+                Text(text = "Alright, you win. Happy now?", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            10 -> {
+                Text(text = "You’re actually doing it!", fontSize = 30.sp)
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            else -> {
+                Text(text = "", fontSize = 30.sp)
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }
