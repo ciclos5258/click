@@ -155,31 +155,33 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TextInsideProgressBar(
-    progress: Float, 
+    progress: Float,
     modifier: Modifier = Modifier,
-    height: Dp = 30.dp // You can change this default or pass a value
+    height: Dp = 30.dp
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clip(RoundedCornerShape(height / 2)) // Use half of height for rounded ends
+            .clip(RoundedCornerShape(height / 2))
             .background(Color.LightGray),
         contentAlignment = Alignment.Center
     ) {
-        // Рисуем сам прогресс
-        LinearProgressIndicator(
-            progress = progress,
-            modifier = Modifier.fillMaxSize(),
-            color = Color.Cyan,
-            trackColor = Color.Transparent // Фон уже задан у Box
-        )
+        if (progress > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(com.example.pocket20.ui.theme.ProgressBarColor)
+                    .align(Alignment.CenterStart)
+            )
+        }
 
-        // Текст поверх прогресса
         Text(
-            text = "Выполнено: ${(progress * 100).toInt()}%",
+            text = "Completed: ${(progress * 100).toInt()}%",
             color = Color.Black,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 16.sp
         )
     }
 }

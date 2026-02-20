@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 val AppGray = Color(0xFF606060)
 val PureWhite = Color(0xFFFFFFFF)
 val PureBlack = Color(0xFF000000)
+val ProgressBarColor = Color(0xFF4CAF50)
 
 
 private val DarkColorScheme = darkColorScheme(
