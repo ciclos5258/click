@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Dp
 
 enum class Screen {
     Shop, Profile
@@ -153,12 +154,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun TextInsideProgressBar(progress: Float, modifier: Modifier = Modifier) {
+fun TextInsideProgressBar(
+    progress: Float, 
+    modifier: Modifier = Modifier,
+    height: Dp = 30.dp // You can change this default or pass a value
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(30.dp)
-            .clip(RoundedCornerShape(15.dp)) // Скругляем углы
+            .height(height)
+            .clip(RoundedCornerShape(height / 2)) // Use half of height for rounded ends
             .background(Color.LightGray),
         contentAlignment = Alignment.Center
     ) {
@@ -206,7 +211,12 @@ fun ShopScreen(
                 modifier = Modifier.size(50.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            TextInsideProgressBar(progress = (count.toFloat() / 1000000f).coerceIn(0f, 1f), modifier = Modifier.weight(3f))
+            // Example: changing height to 40.dp here
+            TextInsideProgressBar(
+                progress = (count.toFloat() / 1000000f).coerceIn(0f, 1f), 
+                modifier = Modifier.weight(5f),
+                height = 70.dp
+            )
         }
     }
     Column(
@@ -377,7 +387,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (rebirth > 9) Color.Green else Color.LightGray,
+            color = if (rebirth > 10) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -478,57 +488,59 @@ fun ProfileScreen(
 
 @Composable
 fun WinScreen(
-    onRestart: () -> Unit,
     globalCount: Long,
-    rebirth: Int
+    rebirth: Int,
+    onRestart: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .padding(5.dp)
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.Center
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         Text(text = "🎉YOU WIN!🎉", fontSize = 30.sp, color = Color.Green)
         Spacer(modifier = Modifier.height(30.dp))
         when (rebirth) {
             1 -> {
-                Text(text = "Or not?", fontSize = 30.sp)
+                Text(text = "Or not?", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(20.dp))
-                Text(text = "Welcome to The Game.", fontSize = 30.sp)
+                Text(text = "Welcome to The Game.", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             2 -> {
-                Text(text = "Here we go again?", fontSize = 30.sp)
+                Text(text = "Here we go again?", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             3 -> {
-                Text(text = "Successfully Unproductive", fontSize = 30.sp)
+                Text(text = "Successfully Unproductive", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             4 -> {
-                Text(text = "You’re Doing Great, Sweetie", fontSize = 30.sp)
+                Text(text = "You’re Doing Great, Sweetie", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             5 -> {
-                Text(text = "You are natural at This (Unfortunately)", fontSize = 30.sp)
+                Text(text = "You are awsome!", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             6 -> {
-                Text(text = "You a professional life waster!", fontSize = 30.sp)
+                Text(text = "You a professional life waster!", fontSize = 30.sp, modifier = Modifier.padding(32.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             7 -> {
-                Text(text = "Stop it! You are doing this in vain", fontSize = 30.sp)
+                Text(text = "Stop it! You are doing this in vain", fontSize = 30.sp, modifier = Modifier.padding(32.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             8 -> {
-                Text(text = "Alright, you win. Happy now?", fontSize = 30.sp)
+                Text(text = "Alright, you win. Happy now?", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            9 -> {
+                Text(text = "You’re close to...", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             10 -> {
-                Text(text = "You’re actually doing it!", fontSize = 30.sp)
+                Text(text = "You’re actually doing it!", fontSize = 30.sp, modifier = Modifier.padding(8.dp))
                 Spacer(modifier = Modifier.height(100.dp))
             }
             else -> {
