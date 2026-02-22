@@ -2,7 +2,6 @@ package com.example.pocket20
 
 import kotlinx.coroutines.delay
 import android.os.Bundle
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,7 +14,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,9 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.launch
 
 enum class Screen {
     Shop, Profile
@@ -47,9 +45,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val context = LocalContext.current
+            val prefsManager = remember { PreferencesManager(context) }
+            
             Pocket20Theme {
                 var currentScreen by remember { mutableStateOf(Screen.Shop) }
-                var globalCount by remember { mutableStateOf(1L) }
+                
+                val savedGlobalCount by prefsManager.globalCountFlow.collectAsState(initial = 0L)
+                val savedShopLevel by prefsManager.shopLevelFlow.collectAsState(initial = 1)
+                val savedSpeedCoef by prefsManager.speedCoefFlow.collectAsState(initial = 1)
+                val savedRebirth by prefsManager.rebirthFlow.collectAsState(initial = 1)
+                val savedRebirthCoef by prefsManager.rebirthCoefFlow.collectAsState(initial = 1)
+                val savedCompleteProfessional by prefsManager.completeProfessionalFlow.collectAsState(initial = false)
+                val savedCompleteWait by prefsManager.completeWaitFlow.collectAsState(initial = false)
+                val savedCompleteCEO by prefsManager.completeCEOFlow.collectAsState(initial = false)
+
+                var globalCount by remember { mutableStateOf(0L) }
                 var shopLevel by remember { mutableStateOf(1) }
                 var speedCoef by remember { mutableStateOf(1) }
                 var isWon by remember { mutableStateOf(false) }
@@ -58,6 +69,17 @@ class MainActivity : ComponentActivity() {
                 var completeProfessionaltimewaster by remember { mutableStateOf(false) }
                 var completeWait by remember { mutableStateOf(false) }
                 var completeCEO by remember { mutableStateOf(false) }
+
+                val scope = rememberCoroutineScope()
+
+                LaunchedEffect(savedGlobalCount) { globalCount = savedGlobalCount }
+                LaunchedEffect(savedShopLevel) { shopLevel = savedShopLevel }
+                LaunchedEffect(savedSpeedCoef) { speedCoef = savedSpeedCoef }
+                LaunchedEffect(savedRebirth) { rebirth = savedRebirth }
+                LaunchedEffect(savedRebirthCoef) { rebirthCoef = savedRebirthCoef }
+                LaunchedEffect(savedCompleteProfessional) { completeProfessionaltimewaster = savedCompleteProfessional }
+                LaunchedEffect(savedCompleteWait) { completeWait = savedCompleteWait }
+                LaunchedEffect(savedCompleteCEO) { completeCEO = savedCompleteCEO }
 
                 val items = listOf("Shop", "Profile")
                 val icons = listOf(Icons.Filled.Home, Icons.Filled.Person)
@@ -69,12 +91,24 @@ class MainActivity : ComponentActivity() {
                         val realDelay = 1000L / safeSpeed
                         delay(realDelay)
                         globalCount += shopLevel * rebirthCoef * rebirth
-                        if (shopLevel > 99){completeProfessionaltimewaster = true}
-                        if (speedCoef > 99){completeWait = true}
-                        if (shopLevel > 999){completeCEO = true}
+                        
+                        if (shopLevel > 99 && !completeProfessionaltimewaster) {
+                            completeProfessionaltimewaster = true
+                            prefsManager.saveCompleteProfessional(true)
+                        }
+                        if (speedCoef > 99 && !completeWait) {
+                            completeWait = true
+                            prefsManager.saveCompleteWait(true)
+                        }
+                        if (shopLevel > 999 && !completeCEO) {
+                            completeCEO = true
+                            prefsManager.saveCompleteCEO(true)
+                        }
+                        
                         if (globalCount >= winScore) {
                             isWon = true
                         }
+                        prefsManager.saveGlobalCount(globalCount)
                     }
                 }
 
@@ -83,17 +117,12 @@ class MainActivity : ComponentActivity() {
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
                         if (!isWon) {
-                            Column(){
+                            Column {
                                 HorizontalDivider(color = Color.Black, thickness = 2.dp)
                                 NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                                     items.forEachIndexed { index, item ->
                                         NavigationBarItem(
-                                            icon = {
-                                                Icon(
-                                                    icons[index],
-                                                    contentDescription = item
-                                                )
-                                            },
+                                            icon = { Icon(icons[index], contentDescription = item) },
                                             label = { Text(item) },
                                             selected = currentScreen.ordinal == index,
                                             onClick = {
@@ -104,10 +133,6 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             }
                                         )
-
-
-
-
                                     }
                                 }
                             }
@@ -125,27 +150,47 @@ class MainActivity : ComponentActivity() {
                                 globalCount = globalCount,
                                 rebirth = rebirth,
                                 onRestart = {
-                                    globalCount = 0L
-                                    shopLevel = 1
-                                    speedCoef = 1
-                                    rebirth++
-                                    isWon = false
-                                    currentScreen = Screen.Shop
-                                    rebirthCoef = rebirthCoef + 5
+                                    scope.launch {
+                                        globalCount = 0L
+                                        shopLevel = 1
+                                        speedCoef = 1
+                                        rebirth++
+                                        rebirthCoef += 5
+                                        isWon = false
+                                        currentScreen = Screen.Shop
+                                        
+                                        prefsManager.saveGlobalCount(globalCount)
+                                        prefsManager.saveShopLevel(shopLevel)
+                                        prefsManager.saveSpeedCoef(speedCoef)
+                                        prefsManager.saveRebirth(rebirth)
+                                        prefsManager.saveRebirthCoef(rebirthCoef)
+                                    }
                                 })
                         } else {
                             when (currentScreen) {
                                 Screen.Shop -> ShopScreen(
                                     count = globalCount,
-                                    onCountChange = { globalCount = it },
+                                    onCountChange = { 
+                                        globalCount = it 
+                                        scope.launch { prefsManager.saveGlobalCount(it) }
+                                    },
                                     level = shopLevel,
-                                    onLevelChange = { shopLevel = it },
+                                    onLevelChange = { 
+                                        shopLevel = it 
+                                        scope.launch { prefsManager.saveShopLevel(it) }
+                                    },
                                     speedCoef = speedCoef,
-                                    onSpeedChange = { speedCoef = it }
+                                    onSpeedChange = { 
+                                        speedCoef = it 
+                                        scope.launch { prefsManager.saveSpeedCoef(it) }
+                                    }
                                 )
                                 Screen.Profile -> ProfileScreen(
                                     currentCount = globalCount,
-                                    onCountChange = { globalCount = it },
+                                    onCountChange = { 
+                                        globalCount = it 
+                                        scope.launch { prefsManager.saveGlobalCount(it) }
+                                    },
                                     onWinChange = { isWon = it },
                                     rebirth = rebirth,
                                     shopLevel = shopLevel,
@@ -223,7 +268,6 @@ fun ShopScreen(
                 modifier = Modifier.size(50.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            // Example: changing height to 40.dp here
             TextInsideProgressBar(
                 progress = (count.toFloat() / 1000000f).coerceIn(0f, 1f), 
                 modifier = Modifier.weight(5f),
@@ -351,7 +395,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (completeProfessionaltimewaster == true) Color.Green else Color.LightGray,
+            color = if (completeProfessionaltimewaster) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -368,7 +412,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (completeWait == true) Color.Green else Color.LightGray,
+            color = if (completeWait) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -385,7 +429,7 @@ fun ProfileScreen(
         Surface(
             shape = RoundedCornerShape(12.dp),
             shadowElevation = 8.dp,
-            color = if (completeCEO == true) Color.Green else Color.LightGray,
+            color = if (completeCEO) Color.Green else Color.LightGray,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
